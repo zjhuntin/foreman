@@ -123,29 +123,16 @@ class Authorizer
   def build_scoped_search_condition(filters)
     raise ArgumentError if filters.blank?
 
-    if filters.all?(&:granular?)
-      # All the filters support granular filtering
-      #
-      # This means we can build a simplified query by OR-ing all the per-filter
-      # searches together and then AND-ing a single check for user's taxonomies
-
-      # Do not do any scoping if there's a filter which grants the permission universally
-      base_conditions = filters.any? { |f| f.taxonomy_search.nil? && f.search.nil? } ? [] : filters.map(&:search_condition)
+    if filters.all?(&:granular?) && filters.any? { |f| f.taxonomy_search.nil? && f.search.nil? }
+      # A filter grants permission universally — only restrict by user's taxonomies
       tax_conditions = filters.first.taxonomy_search_condition_for_user(@user)
-
-      QueryBuilder.join(
-        'AND',
-        [
-          QueryBuilder.join('OR', base_conditions),
-          QueryBuilder.join('AND', tax_conditions),
-        ])
+      QueryBuilder.join('AND', tax_conditions)
     else
-      # At least one of the filters does not support granular filtering. This is
-      # probably the less common case
-      #
-      # This means we cannot take any shortcuts and need to build a query where
-      # the checks for user's taxonomies are evaluated for each filter
-      # individually
+      # Merge each filter's taxonomy_search with the user's taxonomy IDs in Ruby,
+      # producing a single set of (intersected) taxonomy conditions per filter.
+      # This avoids generating redundant SQL subselects for the role's full
+      # taxonomy list alongside the user's taxonomy list, which caused expensive
+      # query plans with many organizations/locations.
       conditions = filters.map { |f| f.search_condition_for_user(@user) }
       QueryBuilder.join('OR', conditions)
     end

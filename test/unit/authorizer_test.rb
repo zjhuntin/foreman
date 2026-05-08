@@ -212,7 +212,7 @@ class AuthorizerTest < ActiveSupport::TestCase
     filters = [FactoryBot.build_stubbed(:filter, :on_name_all)]
     result  = auth.build_scoped_search_condition(filters)
 
-    assert_equal "(((name ~ *)) AND ((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))))", result
+    assert_equal "((name ~ *) AND (organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first})))", result
   end
 
   test "#build_scoped_search_condition(filters) for more filters" do
@@ -220,7 +220,7 @@ class AuthorizerTest < ActiveSupport::TestCase
     auth    = Authorizer.new(user)
     filters = [FactoryBot.build_stubbed(:filter, :on_name_all), FactoryBot.build_stubbed(:filter, :on_name_starting_with_a)]
     result  = auth.build_scoped_search_condition(filters)
-    assert_equal result, "(((name ~ *) OR (name ~ a*)) AND ((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))))"
+    assert_equal result, "(((name ~ *) AND (organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))) OR ((name ~ a*) AND (organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))))"
   end
 
   test "#build_scoped_search_condition(filters) for filter" do
@@ -229,7 +229,7 @@ class AuthorizerTest < ActiveSupport::TestCase
     filters = [FactoryBot.build_stubbed(:filter)]
     result  = auth.build_scoped_search_condition(filters)
 
-    assert_equal "(((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))))", result
+    assert_equal "((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first})))", result
   end
 
   test "#build_scoped_search_condition(filters) for limited and unlimited filter" do
@@ -238,7 +238,7 @@ class AuthorizerTest < ActiveSupport::TestCase
     filters = [FactoryBot.build_stubbed(:filter, :on_name_all), FactoryBot.build_stubbed(:filter)]
     result  = auth.build_scoped_search_condition(filters)
 
-    assert_equal "(((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))))", result
+    assert_equal "((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first})))", result
   end
 
   test "#build_scoped_search_condition(filters) for empty filter" do
@@ -247,7 +247,7 @@ class AuthorizerTest < ActiveSupport::TestCase
     filters = [FactoryBot.build_stubbed(:filter, :search => nil)]
     result  = auth.build_scoped_search_condition(filters)
 
-    assert_equal "(((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first}))))", result
+    assert_equal "((organization_id ^ (#{user.organization_ids.first})) AND (location_id ^ (#{user.location_ids.first})))", result
   end
 
   test "#find_collection(Host, :permission => :view_hosts) with scoped_search join returns r/w resources" do
